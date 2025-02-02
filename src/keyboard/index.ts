@@ -25,3 +25,8 @@ export const confirmationKeyInUz: Markup.Markup<any> = Markup.inlineKeyboard([
   [Markup.button.callback('Tasdiqlash ✅', 'tasdiqlash')],
   [Markup.button.callback('Bekor qilish ❌', 'bekor_qilish')],
 ]);
+
+export const confirmationKeyInRu: Markup.Markup<any> = Markup.inlineKeyboard([
+  [Markup.button.callback('Tasdiqlash ✅', 'tasdiqlash')],
+  [Markup.button.callback('Отмена ❌', 'bekor_qilish')],
+]);

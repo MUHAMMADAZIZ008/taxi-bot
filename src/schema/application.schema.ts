@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 @Schema()
 export class Application {
   @Prop({ required: false })
-  first_name: string;
+  full_name: string;
 
   @Prop({ required: false })
   currnet_address: string;

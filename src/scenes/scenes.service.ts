@@ -14,7 +14,7 @@ export class ScenesProvider {
 
   createTaxiConversation(): Scenes.WizardScene<Scenes.WizardContext> {
     return new Scenes.WizardScene(
-      'user_info',
+      'user',
       async (ctx: Scenes.WizardContext) => {
         await ctx.reply(`To'liq ismingizni kiriting:`);
         return ctx.wizard.next();

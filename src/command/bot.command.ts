@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { keyboardLan } from 'src/keyboard';
+import { Command } from 'nestjs-telegraf';
+import {
+  confirmationKeyInRu,
+  confirmationKeyInUz,
+  keyboardLan,
+  menuInRu,
+  menuInUz,
+} from 'src/keyboard';
+import { Application } from 'src/schema/application.schema';
 import { Users } from 'src/schema/users.schema';
 import { Context } from 'telegraf';
 
@@ -9,6 +17,8 @@ import { Context } from 'telegraf';
 export class BotCommands {
   constructor(
     @InjectModel(Users.name) private readonly userModel: Model<Users>,
+    @InjectModel(Application.name)
+    private readonly appModel: Model<Application>,
   ) {}
   async startCommand(ctx: Context) {
     const userId = ctx.message?.from?.id;
@@ -29,7 +39,211 @@ export class BotCommands {
     }
   }
 
-  // async conversationForTaxi(ctx: Context) {
-  //     const askFullName = new Scenes.
-  // }
+  // conversationForTaxi
+  // stpe 1
+  async startStep(ctx: Context, user: Users) {
+    try {
+      if (user.chat_language === 'uz') {
+        await ctx.reply(`Ma'lumotlarni aniq to'ldiring❗️`);
+        await ctx.reply(`To'liq ismingizni kiriting:`);
+      } else if (user.chat_language === 'ru') {
+        await ctx.reply(`Заполняйте информацию точно❗️`);
+        await ctx.reply(`Введите свое полное имя:`);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  //step 2
+  async addFullName(ctx: Context, user) {
+    try {
+      const message = ctx.text;
+      await this.appModel.create({
+        userId: user._id,
+        full_name: message,
+      });
+
+      if (user.chat_language === 'uz') {
+        await ctx.reply('Joriy manzilingizni lokatsiya shaklida yuboring📍');
+      }
+      if (user.chat_language === 'ru') {
+        await ctx.reply(
+          'Отправьте ваш текущий адрес в качестве местоположения📍',
+        );
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  //step 3
+  async addCurrentAddress(ctx: Context, user: any, app: any) {
+    try {
+      let message = ctx.text;
+      const location = ctx.message as any;
+      if (location) {
+        const { latitude, longitude } = location.location;
+        await this.appModel.updateOne(
+          { _id: app._id },
+          {
+            currnet_address: `https://yandex.uz/maps/?pt=${longitude},${latitude}&z=16&l=map`,
+          },
+        );
+        // console.log(
+        //   `https://yandex.uz/maps/?pt=${longitude},${latitude}&z=16&l=map`,
+        // );
+        message = undefined;
+      } else if (message) {
+        await this.appModel.updateOne(
+          { _id: app._id },
+          {
+            currnet_address: message,
+          },
+        );
+      }
+
+      if (user.chat_language === 'uz') {
+        await ctx.reply('Hozirda ishlayotgan telfon raqamingizni yuboring📞');
+      }
+      if (user.chat_language === 'ru') {
+        await ctx.reply('Отправьте свой текущий рабочий номер телефона📞');
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  //step 4
+  async addPhoneNumber(ctx: Context, user: any, app: any) {
+    try {
+      const message = ctx.text;
+      await this.appModel.updateOne(
+        { _id: app._id },
+        { phone_number: message },
+      );
+
+      if (user.chat_language === 'uz') {
+        await ctx.reply('Borish manzilini yuboring📍');
+      } else if (user.chat_language === 'ru') {
+        await ctx.reply('Отправить адрес назначения📍');
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  //step 5
+  async addAddress(ctx: Context, user: any, app: any) {
+    try {
+      const message = ctx.text;
+      await this.appModel.updateOne({ _id: app._id }, { where: message });
+      if (user.chat_language === 'uz') {
+        await ctx.reply(`Jo'nash vaqtini yugoring yuboring⏰`);
+      } else if (user.chat_language === 'ru') {
+        await ctx.reply('Отправьте время отправления⏰');
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  // step 6
+  async addDeparture(ctx: Context, user: any, app: any) {
+    try {
+      const message = ctx.text;
+      await this.appModel.updateOne(
+        { _id: app._id },
+        { departure_time: message },
+      );
+      const currentApp = await this.appModel.findOne({ _id: app._id });
+      if (user.chat_language === 'uz') {
+        await ctx.reply(
+          `
+To'liq ismi: ${currentApp.full_name}
+Joriy manzil: ${currentApp.currnet_address}
+Telfon raqam: ${currentApp.phone_number}
+Borish manzili: ${currentApp.where}
+Ketish vaqti: ${currentApp.departure_time}
+Qo'shimcha:
+  Telegram username: @${user.username || ''}
+
+
+Ma'lumotlar to'g'riligini tasdiqlang va u haydovchiga yuboriladi!
+          `,
+          confirmationKeyInUz,
+        );
+      } else if (user.chat_language === 'ru') {
+        await ctx.reply(
+          `
+Полное имя: ${currentApp.full_name}
+Текущий адрес: ${currentApp.currnet_address}
+Номер телефона: ${currentApp.phone_number}
+Место назначения: ${currentApp.where}
+Время отправления: ${currentApp.departure_time}
+Дополнительно:
+  Телеграм username: ${user.username || ''}
+
+
+Подтвердите правильность информации, и она будет отправлена ​​водителю!
+          `,
+          confirmationKeyInRu,
+        );
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  //send group
+  @Command('send')
+  async sendGroup(ctx: Context) {
+    try {
+      const user = await this.userModel.findOne({
+        telegram_id: ctx.message.from.id,
+      });
+      console.log(user);
+      console.log(process.env.GROUP_ID);
+
+      const currentApps = await this.appModel.find({ userId: user._id });
+      const currentApp = currentApps.pop();
+      if (user.chat_language === 'uz') {
+        await ctx.telegram.sendMessage(
+          process.env.GROUP_ID,
+          `
+To'liq ismi: ${currentApp.full_name}
+Joriy manzil: ${currentApp.currnet_address}
+Telfon raqam: ${currentApp.phone_number}
+Borish manzili: ${currentApp.where}
+Ketish vaqti: ${currentApp.departure_time}
+Qo'shimcha:
+  Telegram username: @${user.username || ''}
+          `,
+        );
+        await ctx.reply(
+          `Xabar haydovchilarga yuborildi tez orada hadovchilarda bir siz bilan bog'lanadi!`,
+          menuInUz,
+        );
+      } else if (user.chat_language === 'ru') {
+        await ctx.telegram.sendMessage(
+          process.env.GROUP_ID,
+          `
+Полное имя: ${currentApp.full_name}
+Текущий адрес: ${currentApp.currnet_address}
+Номер телефона: ${currentApp.phone_number}
+Место назначения: ${currentApp.where}
+Время отправления: ${currentApp.departure_time}
+Дополнительно:
+  Телеграм username: ${user.username || ''}
+          `,
+        );
+        await ctx.reply(
+          'Сообщение отправлено водителям, один из водителей свяжется с вами в ближайшее время!',
+          menuInRu,
+        );
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
 }
