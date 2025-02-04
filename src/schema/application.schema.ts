@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Application {
   @Prop({ required: false })
   full_name: string;
@@ -17,6 +17,9 @@ export class Application {
 
   @Prop({ required: false })
   departure_time: string;
+
+  @Prop({ required: false })
+  message_id: number;
 
   @Prop({
     type: Types.ObjectId,

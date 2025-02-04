@@ -95,4 +95,8 @@ export class BotService implements OnModuleInit {
   async confirmation(@Ctx() ctx: Context) {
     await this.botcommands.sendGroup(ctx);
   }
+  //   @Action('bekor_qilish')
+  //   async dismiss(@Ctx() ctx: Context) {
+  //     await this.botcommands.dismiss(ctx);
+  //   }
 }

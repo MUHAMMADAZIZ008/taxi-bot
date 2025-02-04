@@ -139,7 +139,7 @@ export class BotCommands {
       const message = ctx.text;
       await this.appModel.updateOne({ _id: app._id }, { where: message });
       if (user.chat_language === 'uz') {
-        await ctx.reply(`Jo'nash vaqtini yugoring yuboring⏰`);
+        await ctx.reply(`Jo'nash vaqtini yuboring⏰`);
       } else if (user.chat_language === 'ru') {
         await ctx.reply('Отправьте время отправления⏰');
       }
@@ -158,7 +158,7 @@ export class BotCommands {
       );
       const currentApp = await this.appModel.findOne({ _id: app._id });
       if (user.chat_language === 'uz') {
-        await ctx.reply(
+        const sendMessage = await ctx.reply(
           `
 To'liq ismi: ${currentApp.full_name}
 Joriy manzil: ${currentApp.currnet_address}
@@ -173,8 +173,12 @@ Ma'lumotlar to'g'riligini tasdiqlang va u haydovchiga yuboriladi!
           `,
           confirmationKeyInUz,
         );
+        await this.appModel.updateOne(
+          { _id: app._id },
+          { message_id: sendMessage.message_id },
+        );
       } else if (user.chat_language === 'ru') {
-        await ctx.reply(
+        const sendMessage = await ctx.reply(
           `
 Полное имя: ${currentApp.full_name}
 Текущий адрес: ${currentApp.currnet_address}
@@ -189,6 +193,10 @@ Ma'lumotlar to'g'riligini tasdiqlang va u haydovchiga yuboriladi!
           `,
           confirmationKeyInRu,
         );
+        await this.appModel.updateOne(
+          { _id: app._id },
+          { message_id: sendMessage.message_id },
+        );
       }
     } catch (error) {
       console.log(error.message);
@@ -200,10 +208,8 @@ Ma'lumotlar to'g'riligini tasdiqlang va u haydovchiga yuboriladi!
   async sendGroup(ctx: Context) {
     try {
       const user = await this.userModel.findOne({
-        telegram_id: ctx.message.from.id,
+        telegram_id: ctx.from.id,
       });
-      console.log(user);
-      console.log(process.env.GROUP_ID);
 
       const currentApps = await this.appModel.find({ userId: user._id });
       const currentApp = currentApps.pop();
@@ -221,9 +227,10 @@ Qo'shimcha:
           `,
         );
         await ctx.reply(
-          `Xabar haydovchilarga yuborildi tez orada hadovchilarda bir siz bilan bog'lanadi!`,
+          `Xabar haydovchilarga yuborildi tez orada hadovchilarda biri siz bilan bog'lanadi!`,
           menuInUz,
         );
+        await ctx.telegram.deleteMessage(ctx.chat.id, currentApp.message_id);
       } else if (user.chat_language === 'ru') {
         await ctx.telegram.sendMessage(
           process.env.GROUP_ID,
@@ -241,6 +248,7 @@ Qo'shimcha:
           'Сообщение отправлено водителям, один из водителей свяжется с вами в ближайшее время!',
           menuInRu,
         );
+        await ctx.telegram.deleteMessage(ctx.chat.id, currentApp.message_id);
       }
     } catch (error) {
       console.log(error.message);
