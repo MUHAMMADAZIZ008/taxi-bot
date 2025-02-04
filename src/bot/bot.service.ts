@@ -89,14 +89,17 @@ export class BotService implements OnModuleInit {
       await this.botcommands.addDeparture(ctx, user, currentApp);
       userStates.set(chatId, undefined);
     }
+    if (message === `Tilni o'zgartirish 🇷🇺`) {
+      await this.botcommands.changeLanguage(ctx);
+    }
   }
 
   @Action('tasdiqlash')
   async confirmation(@Ctx() ctx: Context) {
     await this.botcommands.sendGroup(ctx);
   }
-  //   @Action('bekor_qilish')
-  //   async dismiss(@Ctx() ctx: Context) {
-  //     await this.botcommands.dismiss(ctx);
-  //   }
+  @Action('bekor_qilish')
+  async dismiss(@Ctx() ctx: Context) {
+    await this.botcommands.dismiss(ctx);
+  }
 }

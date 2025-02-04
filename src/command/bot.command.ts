@@ -254,4 +254,36 @@ Qo'shimcha:
       console.log(error.message);
     }
   }
+
+  async dismiss(ctx: Context) {
+    try {
+      const user = await this.userModel.findOne({
+        telegram_id: ctx.from.id,
+      });
+
+      const currentApps = await this.appModel.find({ userId: user._id });
+      const currentApp = currentApps.pop();
+      await this.appModel.deleteOne({ _id: currentApp._id });
+      await ctx.telegram.deleteMessage(ctx.chat.id, currentApp.message_id);
+      if (user.chat_language === 'uz') {
+        await ctx.reply(`Muvaffaqiyatli o'chirildi🗑`, menuInUz);
+      } else if (user.chat_language === 'ru') {
+        await ctx.reply(`Успешно удалено🗑`, menuInRu);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  // change language
+  async changeLanguage(ctx: Context) {
+    const user = await this.userModel.findOne({
+      telegram_id: ctx.from.id,
+    });
+    if (user.chat_language === 'uz') {
+      await ctx.reply('Выбирать🔂', keyboardLan);
+    } else if (user.chat_language === 'ru') {
+      await ctx.reply('Tanlang🔂', keyboardLan);
+    }
+  }
 }
